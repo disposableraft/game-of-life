@@ -1,0 +1,29 @@
+.container {
+  width: 100%;
+  height: 100%;
+}
+
+.grid {
+  display: grid;
+  gap: 1px;
+  margin-left: 1.5em;
+  margin-right: 1.5em;
+}
+
+.inactiveItem, .activeItem {
+  cursor: pointer;
+}
+
+.inactiveItem {
+  background-color: rgb(221, 227, 231);
+}
+
+.activeItem {
+  background-color: rgb(53, 55, 63);
+}
+
+.controls {
+  text-align: center;
+  margin: 2em;
+  /* height: 50px; */
+}
