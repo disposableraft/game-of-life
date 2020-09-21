@@ -1,4 +1,4 @@
-export default function () {
+function worker() {
   const countNeighbors = (matrix, x, y) => {
     let neighbors = 0;
     for (let i = -1; i < 2; i++) {
@@ -65,3 +65,13 @@ export default function () {
     false
   );
 }
+
+class WebWorker {
+  constructor(worker) {
+    const code = worker.toString();
+    const blob = new Blob(["(" + code + ")()"]);
+    return new Worker(URL.createObjectURL(blob));
+  }
+}
+
+export { WebWorker, worker };

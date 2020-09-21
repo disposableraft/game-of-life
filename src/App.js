@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from "react";
-import {
-  matrixMap,
-  bisectedMatrix,
-  hourglassMatrix,
-  primeMatrix,
-  fairCoinMatrix,
-} from "./game-of-life";
-import worker from "./worker";
-import WebWorker from "./workerSetup";
+import React, { useState, useEffect, useReducer } from "react";
+import matrixMap from "./matrix-map";
+import { Matrix } from "./matrix";
+import { worker, WebWorker } from "./worker";
 import style from "./App.module.css";
 
 const defaultSize = 23;
-const defaultSpeed = 300;
+const defaultSpeed = 350;
+const m = new Matrix(defaultSize, "bisected");
 
 const App = () => {
-  const [size, setSize] = useState(defaultSize);
-  const [matrixName, setMatrixname] = useState("bisected");
-  const [matrix, setMatrix] = useState(bisectedMatrix(defaultSize));
+  const [state, dispatch] = useReducer(m.reducer, {
+    matrix: m.matrix,
+    pattern: m.pattern,
+    size: m.size,
+  });
   const [iterating, setIterating] = useState(false);
 
   useEffect(() => {
@@ -27,56 +24,44 @@ const App = () => {
         thread.addEventListener("message", (e) => {
           const updatedMatrix = e.data.matrix;
           if (updatedMatrix) {
-            setMatrix(updatedMatrix);
+            dispatch({
+              type: "update",
+              matrix: updatedMatrix,
+            });
           } else {
             setIterating(false);
           }
         });
 
-        thread.postMessage({ matrix: matrix });
+        thread.postMessage({ matrix: state.matrix });
       }, defaultSpeed);
 
       return () => {
         clearInterval(timer);
       };
     }
-  }, [iterating, matrix]);
+  });
 
   const toggleIterate = () => {
     setIterating(!iterating);
   };
 
   const reset = () => {
-    setMatrix(bisectedMatrix(size));
+    dispatch({ type: "reset" });
     setIterating(false);
   };
 
   const toggleItem = (y, x) => {
-    setMatrix((matrix) => {
-      return matrixMap(matrix, (value, rowIndex, colIndex) => {
-        if (rowIndex === y && colIndex === x) {
-          return !value;
-        }
-        return value;
-      });
-    });
+    state.matrix[y][x] = !state.matrix[y][x];
+    dispatch({ type: "update", matrix: state.matrix });
   };
 
-  const selectMatrix = (name) => {
-    const matrixStyles = {
-      bisected: bisectedMatrix(size),
-      hourglass: hourglassMatrix(size),
-      primes: primeMatrix(size),
-      faircoin: fairCoinMatrix(size),
-    };
-    setMatrixname(name);
-    setMatrix(matrixStyles[name]);
+  const selectPattern = (name) => {
+    dispatch({ type: "setPattern", pattern: name });
   };
 
   const selectSize = (s) => {
-    const newSize = Number(s);
-    setMatrix(bisectedMatrix(newSize));
-    setSize(newSize);
+    dispatch({ type: "resize", size: Number(s) });
   };
 
   return (
@@ -91,9 +76,9 @@ const App = () => {
         </button>
         <button onClick={() => reset()}>Reset</button>
         <select
-          value={matrixName}
+          value={state.pattern}
           onChange={(e) => {
-            selectMatrix(e.target.value);
+            selectPattern(e.target.value);
           }}
         >
           <option value="bisected">Bisected</option>
@@ -104,10 +89,10 @@ const App = () => {
         <input
           type="range"
           name="matrix_size"
-          min="12"
+          min="3"
           max="75"
           step="1"
-          value={size}
+          value={state.size}
           onChange={(e) => {
             selectSize(e.target.value);
           }}
@@ -116,16 +101,16 @@ const App = () => {
       <div
         className={style.grid}
         style={{
-          gridTemplateColumns: `repeat(${size}, 1fr)`,
+          gridTemplateColumns: `repeat(${state.size}, 1fr)`,
         }}
       >
-        {matrixMap(matrix, (value, rowIndex, colIndex) => {
+        {matrixMap(state.matrix, (value, rowIndex, colIndex) => {
           return (
             <div
               key={`${rowIndex}-${colIndex}`}
               className={value ? style.activeItem : style.inactiveItem}
               style={{
-                height: `${75 / size}vh`,
+                height: `${75 / state.size}vh`,
               }}
               onClick={() => {
                 toggleItem(rowIndex, colIndex);
