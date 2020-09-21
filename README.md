@@ -1,13 +1,5 @@
+# Conway's Game of Life
 
+A humble, zero-player rendition of Conway's famous [Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 
-game of lfe
-
-- data and  3 or 4 rules
-- x front end
-
-
-[
-  [0, 0, 0],
-  [0, 0, 0],
-  [0, 0, 0]
-]
+*Play* it [here](https://disposableraft.github.io/game-of-life/).
