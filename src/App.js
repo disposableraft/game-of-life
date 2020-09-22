@@ -8,6 +8,9 @@ const defaultSize = 23;
 const defaultSpeed = 350;
 const m = new Matrix(defaultSize, "bisected");
 
+// Calculate matrix transformations on another thread.
+const thread = new WebWorker(worker);
+
 const App = () => {
   const [state, dispatch] = useReducer(m.reducer, {
     matrix: m.matrix,
@@ -19,8 +22,6 @@ const App = () => {
   useEffect(() => {
     if (iterating) {
       const timer = setInterval(() => {
-        // Calculate matrix transformations on another thread.
-        const thread = new WebWorker(worker);
         thread.addEventListener("message", (e) => {
           const updatedMatrix = e.data.matrix;
           if (updatedMatrix) {
