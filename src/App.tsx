@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useReducer } from "react";
 import matrixMap from "./matrix-map";
-import { Matrix } from "./matrix";
-import { worker, WebWorker } from "./worker";
+import { Matrix, Patterns } from "./matrix";
 import style from "./App.module.css";
 
 const defaultSize = 23;
 const defaultSpeed = 350;
-const m = new Matrix(defaultSize, "bisected");
 
-// Calculate matrix transformations on another thread.
-const thread = new WebWorker(worker);
+const m = new Matrix(defaultSize, Patterns.BISECTED);
+
+const worker: Worker = new Worker(
+  `${process.env.PUBLIC_URL}/workers/update-matrix.js`
+);
 
 const App = () => {
   const [state, dispatch] = useReducer(m.reducer, {
@@ -22,8 +23,8 @@ const App = () => {
   useEffect(() => {
     if (iterating) {
       const timer = setInterval(() => {
-        thread.addEventListener("message", (e) => {
-          const updatedMatrix = e.data.matrix;
+        worker.onmessage = (event: MessageEvent) => {
+          const updatedMatrix = event.data.matrix;
           if (updatedMatrix) {
             dispatch({
               type: "update",
@@ -32,9 +33,9 @@ const App = () => {
           } else {
             setIterating(false);
           }
-        });
+        };
 
-        thread.postMessage({ matrix: state.matrix });
+        worker.postMessage({ message: "update", matrix: state.matrix });
       }, defaultSpeed);
 
       return () => {
@@ -52,16 +53,17 @@ const App = () => {
     setIterating(false);
   };
 
-  const toggleItem = (y, x) => {
+  const toggleItem = (y: number, x: number) => {
     state.matrix[y][x] = !state.matrix[y][x];
     dispatch({ type: "update", matrix: state.matrix });
   };
 
-  const selectPattern = (name) => {
-    dispatch({ type: "setPattern", pattern: name });
+  const selectPattern = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const pattern = event.target.value as Patterns;
+    dispatch({ type: "setPattern", pattern: pattern });
   };
 
-  const selectSize = (s) => {
+  const selectSize = (s: string) => {
     dispatch({ type: "resize", size: Number(s) });
   };
 
@@ -76,22 +78,17 @@ const App = () => {
           {iterating ? "Stop" : "Start"}
         </button>
         <button onClick={() => reset()}>Reset</button>
-        <select
-          value={state.pattern}
-          onChange={(e) => {
-            selectPattern(e.target.value);
-          }}
-        >
-          <option value="bisected">Bisected</option>
-          <option value="hourglass">Hourglass</option>
-          <option value="primes">Primes</option>
-          <option value="faircoin">Fair Coin</option>
+        <select value={state.pattern} onChange={selectPattern}>
+          <option value="BISECTED">Bisected</option>
+          <option value="HOURGLASS">Hourglass</option>
+          <option value="PRIMES">Primes</option>
+          <option value="FAIRCOIN">Fair Coin</option>
         </select>
         <input
           type="range"
           name="matrix_size"
           min="3"
-          max="75"
+          max="200"
           step="1"
           value={state.size}
           onChange={(e) => {
@@ -105,20 +102,23 @@ const App = () => {
           gridTemplateColumns: `repeat(${state.size}, 1fr)`,
         }}
       >
-        {matrixMap(state.matrix, (value, rowIndex, colIndex) => {
-          return (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              className={value ? style.activeItem : style.inactiveItem}
-              style={{
-                height: `${75 / state.size}vh`,
-              }}
-              onClick={() => {
-                toggleItem(rowIndex, colIndex);
-              }}
-            ></div>
-          );
-        })}
+        {matrixMap(
+          state.matrix,
+          (value: boolean, rowIndex: number, colIndex: number) => {
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                className={value ? style.activeItem : style.inactiveItem}
+                style={{
+                  height: `${75 / state.size}vh`,
+                }}
+                onClick={() => {
+                  toggleItem(rowIndex, colIndex);
+                }}
+              ></div>
+            );
+          }
+        )}
       </div>
     </div>
   );
