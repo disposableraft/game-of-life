@@ -79,6 +79,7 @@ const App = () => {
         </button>
         <button onClick={() => reset()}>Reset</button>
         <select value={state.pattern} onChange={selectPattern}>
+          <option value="BLANK">Blank</option>
           <option value="BISECTED">Bisected</option>
           <option value="HOURGLASS">Hourglass</option>
           <option value="PRIMES">Primes</option>

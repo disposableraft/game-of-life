@@ -1,6 +1,7 @@
 import matrixMap from "./matrix-map";
 
 export enum Patterns {
+  BLANK = "BLANK",
   BISECTED = "BISECTED",
   HOURGLASS = "HOURGLASS",
   PRIMES = "PRIMES",
@@ -90,6 +91,9 @@ class Matrix {
     this.pattern = pattern;
 
     switch (pattern) {
+      case "BLANK":
+        this.blank();
+        break;
       case "BISECTED":
         this.bisected();
         break;
@@ -106,6 +110,10 @@ class Matrix {
         throw new Error(`${pattern} does not exist`);
     }
   };
+
+  blank = (): void => {
+    this.matrix = this.newEmpty()
+  }
 
   bisected = (): void => {
     this.matrix = matrixMap(
